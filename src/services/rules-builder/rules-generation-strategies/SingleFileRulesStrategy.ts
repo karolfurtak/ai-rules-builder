@@ -3,8 +3,7 @@ import { Layer, Library, Stack } from '../../../data/dictionaries.ts';
 import type { RulesContent } from '../RulesBuilderTypes.ts';
 import {
   createProjectMarkdown,
-  createEmptyStateMarkdown,
-  getProjectMetadata,
+  createEmptyProjectRulesContent,
   renderLibrarySection,
   iterateLayersStacksLibraries,
 } from '../markdown-builders/index.ts';
@@ -20,17 +19,14 @@ export class SingleFileRulesStrategy implements RulesGenerationStrategy {
     stacksByLayer: Record<Layer, Stack[]>,
     librariesByStack: Record<Stack, Library[]>,
   ): RulesContent[] {
-    const projectMarkdown = createProjectMarkdown(projectName, projectDescription);
-    const { label: projectLabel, fileName: projectFileName } = getProjectMetadata();
-
-    let markdown = projectMarkdown;
-
     if (selectedLibraries.length === 0) {
-      markdown += createEmptyStateMarkdown();
-      return [{ markdown, label: projectLabel, fileName: projectFileName }];
+      return createEmptyProjectRulesContent(projectName, projectDescription);
     }
 
-    markdown += this.generateLibraryMarkdown(stacksByLayer, librariesByStack);
+    const markdown =
+      createProjectMarkdown(projectName, projectDescription) +
+      this.generateLibraryMarkdown(stacksByLayer, librariesByStack);
+
     return [{ markdown, label: 'All Rules', fileName: 'rules.mdc' }];
   }
 
@@ -39,24 +35,19 @@ export class SingleFileRulesStrategy implements RulesGenerationStrategy {
     librariesByStack: Record<Stack, Library[]>,
   ): string {
     let markdown = '';
-    let currentLayer = '';
-    let currentStack = '';
+    let previousLayer = '';
+    let previousStack = '';
 
     iterateLayersStacksLibraries({
       stacksByLayer,
       librariesByStack,
       onLibrary: (layer, stack, library) => {
-        const includeLayerHeader = layer !== currentLayer;
-        const includeStackHeader = stack !== currentStack;
+        const includeLayerHeader = layer !== previousLayer;
+        const includeStackHeader = stack !== previousStack;
 
-        if (includeLayerHeader) {
-          currentLayer = layer;
-        }
-        if (includeStackHeader) {
-          currentStack = stack;
-          if (!includeLayerHeader && currentStack) {
-            markdown += '\n';
-          }
+        // Add spacing between stacks when not starting a new layer
+        if (includeStackHeader && !includeLayerHeader && previousStack) {
+          markdown += '\n';
         }
 
         markdown += renderLibrarySection({
@@ -66,6 +57,9 @@ export class SingleFileRulesStrategy implements RulesGenerationStrategy {
           includeLayerHeader,
           includeStackHeader,
         });
+
+        previousLayer = layer;
+        previousStack = stack;
       },
     });
 

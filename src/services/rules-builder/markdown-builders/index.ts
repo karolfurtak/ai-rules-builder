@@ -1,6 +1,7 @@
 import type { Layer, Library, Stack } from '../../../data/dictionaries.ts';
 import { getRulesForLibrary } from '../../../data/rules.ts';
 import { slugify } from '../../../utils/slugify.ts';
+import type { RulesContent } from '../RulesBuilderTypes.ts';
 
 export const createProjectMarkdown = (projectName: string, projectDescription: string): string =>
   `# AI Rules for ${projectName}\n\n${projectDescription}\n\n`;
@@ -12,6 +13,34 @@ export const getProjectMetadata = () => ({
   label: 'Project',
   fileName: 'project.mdc' as const,
 });
+
+/**
+ * Creates a RulesContent object with project header
+ */
+export const createProjectRulesContent = (
+  projectName: string,
+  projectDescription: string,
+): RulesContent => {
+  const { label, fileName } = getProjectMetadata();
+  return {
+    markdown: createProjectMarkdown(projectName, projectDescription),
+    label,
+    fileName,
+  };
+};
+
+/**
+ * Creates a complete empty state RulesContent array (project + empty message)
+ */
+export const createEmptyProjectRulesContent = (
+  projectName: string,
+  projectDescription: string,
+): RulesContent[] => {
+  const { label, fileName } = getProjectMetadata();
+  const markdown =
+    createProjectMarkdown(projectName, projectDescription) + createEmptyStateMarkdown();
+  return [{ markdown, label, fileName }];
+};
 
 export interface LibrarySectionConfig {
   layer: string;

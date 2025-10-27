@@ -2,9 +2,8 @@ import type { RulesGenerationStrategy } from '../RulesGenerationStrategy.ts';
 import { Layer, type Library, Stack } from '../../../data/dictionaries.ts';
 import type { RulesContent } from '../RulesBuilderTypes.ts';
 import {
-  createProjectMarkdown,
-  createEmptyStateMarkdown,
-  getProjectMetadata,
+  createProjectRulesContent,
+  createEmptyProjectRulesContent,
   renderLibrarySection,
   iterateLayersStacksLibraries,
   createLibraryFileMetadata,
@@ -21,17 +20,11 @@ export class MultiFileRulesStrategy implements RulesGenerationStrategy {
     stacksByLayer: Record<Layer, Stack[]>,
     librariesByStack: Record<Stack, Library[]>,
   ): RulesContent[] {
-    const projectMarkdown = createProjectMarkdown(projectName, projectDescription);
-    const { label: projectLabel, fileName: projectFileName } = getProjectMetadata();
-
-    const markdowns: RulesContent[] = [];
-
-    markdowns.push({ markdown: projectMarkdown, label: projectLabel, fileName: projectFileName });
-
     if (selectedLibraries.length === 0) {
-      markdowns[0].markdown += createEmptyStateMarkdown();
-      return markdowns;
+      return createEmptyProjectRulesContent(projectName, projectDescription);
     }
+
+    const markdowns: RulesContent[] = [createProjectRulesContent(projectName, projectDescription)];
 
     iterateLayersStacksLibraries({
       stacksByLayer,
